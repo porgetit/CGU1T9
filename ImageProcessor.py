@@ -394,7 +394,7 @@ class Imagen:
     # ================== EJERCICIO 6: Rotate ==================
     def rotate(self, angle: float, expand: bool = True) -> 'Imagen':
         """
-        Rota la imagen un ángulo dado en grados.
+        Rota la imagen un ángulo dado en grados utilizando solo numpy.
 
         Parámetros:
             angle (float): Ángulo de rotación en grados.
@@ -403,16 +403,43 @@ class Imagen:
         Retorna:
             Imagen: Imagen rotada.
         """
-        if self.datos.max() <= 1:
-            pil_img = Image.fromarray((self.datos * 255).astype(np.uint8))
+        theta = np.radians(angle)
+        cos_t, sin_t = np.cos(theta), np.sin(theta)
+        
+        # Obtener dimensiones originales
+        h, w = self.datos.shape[:2]
+        
+        # Centro de la imagen
+        cx, cy = w / 2, h / 2
+        
+        # Calcular dimensiones de la nueva imagen si expand=True
+        if expand:
+            new_w = int(abs(w * cos_t) + abs(h * sin_t))
+            new_h = int(abs(w * sin_t) + abs(h * cos_t))
         else:
-            pil_img = Image.fromarray(self.datos)
-        rotated = pil_img.rotate(angle, expand=expand, resample=Image.BILINEAR)
-        rotated_arr = np.array(rotated)
-        if self.datos.max() <= 1:
-            rotated_arr = rotated_arr.astype(np.float32) / 255.0
-        self.datos = rotated_arr
-        return self
+            new_w, new_h = w, h
+        
+        new_cx, new_cy = new_w / 2, new_h / 2
+        
+        # Crear imagen de salida (rellena con ceros, fondo negro)
+        if self.datos.ndim == 3:  # Imagen RGB
+            rotated_arr = np.zeros((new_h, new_w, self.datos.shape[2]), dtype=self.datos.dtype)
+        else:  # Imagen en escala de grises
+            rotated_arr = np.zeros((new_h, new_w), dtype=self.datos.dtype)
+        
+        # Iterar sobre cada píxel de la nueva imagen
+        for y_new in range(new_h):
+            for x_new in range(new_w):
+                # Transformar coordenadas inversamente (nueva -> original)
+                x_old = (x_new - new_cx) * cos_t + (y_new - new_cy) * sin_t + cx
+                y_old = -(x_new - new_cx) * sin_t + (y_new - new_cy) * cos_t + cy
+                
+                # Si las coordenadas están dentro de los límites, asignar el valor
+                if 0 <= x_old < w and 0 <= y_old < h:
+                    rotated_arr[y_new, x_new] = self.datos[int(y_old), int(x_old)]
+        
+        return Imagen(rotated_arr)
+
 
     # ================== EJERCICIO 7: Show Histogram ==================
     def show_histogram(self) -> None:

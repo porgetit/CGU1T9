@@ -28,7 +28,7 @@ if __name__ == '__main__':
     image_binary = image.copy().binarize(0.5)
     
     # ================== EJERCICIO 6: Rotación ==================
-    image_rotated = image.copy().rotate(45)
+    image_rotated = image.copy().rotate(90)
     
     # Preparar una imagen para mostrar histogramas (EJERCICIO 7)
     image_histogram = image.copy()
